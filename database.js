@@ -193,10 +193,73 @@ function seedDemoData() {
 }
 
 // -------------------------------------------------------------
+// RECÁLCULO AUTOMÁTICO DE INTERESES (20% CADA 4 SEMANAS)
+// Si un préstamo tiene más de 4 semanas sin pagarse,
+// se cobra un 20% adicional sobre el monto original
+// por cada periodo de 4 semanas transcurrido.
+// -------------------------------------------------------------
+
+function recalcularInteresesVencidos() {
+  const hoy = new Date();
+  const prestamosActivos = db.prepare(`
+    SELECT * FROM prestamos
+    WHERE saldo_pendiente > 0
+    AND estado IN ('APROBADO', 'EN_MORA')
+  `).all();
+
+  for (const pr of prestamosActivos) {
+    const fechaSolicitud = new Date(pr.fecha_solicitud);
+    const diasTranscurridos = Math.floor((hoy - fechaSolicitud) / (1000 * 60 * 60 * 24));
+    const periodosVencidos = Math.floor(diasTranscurridos / 28); // Cada 4 semanas = 28 días
+
+    // Mínimo 1 periodo (el interés inicial del 20%)
+    const periodosTotal = Math.max(1, periodosVencidos);
+
+    // Interés acumulado = 20% del monto original × número de periodos de 4 semanas
+    const nuevoValorInteres = Math.round(pr.monto_solicitado * 0.20 * periodosTotal);
+    const nuevoTotal = pr.monto_solicitado + nuevoValorInteres;
+
+    // Calcular cuánto se ha pagado (abonado) hasta ahora
+    const totalAbonado = pr.total_a_pagar - pr.saldo_pendiente;
+
+    // Nuevo saldo = nuevo total - lo que ya pagó
+    const nuevoSaldo = Math.max(0, nuevoTotal - totalAbonado);
+
+    // Determinar estado de mora
+    const nuevoEstado = periodosVencidos > 1 ? 'EN_MORA' : pr.estado;
+
+    // Solo actualizar si cambió
+    if (nuevoValorInteres !== pr.valor_interes || nuevoTotal !== pr.total_a_pagar) {
+      db.prepare(`
+        UPDATE prestamos SET
+          valor_interes = ?,
+          total_a_pagar = ?,
+          saldo_pendiente = ?,
+          estado = ?,
+          valor_cuota = ?,
+          observaciones = ?
+        WHERE id = ?
+      `).run(
+        nuevoValorInteres,
+        nuevoTotal,
+        nuevoSaldo,
+        nuevoEstado,
+        Math.round(nuevoTotal / pr.plazo_cuotas),
+        `Interés recalculado: ${periodosTotal} periodo(s) de 4 semanas × 20% = ${periodosTotal * 20}% acumulado`,
+        pr.id
+      );
+    }
+  }
+}
+
+// -------------------------------------------------------------
 // METRICS & QUERIES
 // -------------------------------------------------------------
 
 function getMetrics() {
+  // Recalcular intereses antes de obtener métricas
+  recalcularInteresesVencidos();
+
   const query = `
     SELECT
       COUNT(*) as total_solicitudes,
@@ -216,6 +279,9 @@ function getMetrics() {
 }
 
 function getAllLoans(filter = 'todos', search = '') {
+  // Recalcular intereses antes de listar
+  recalcularInteresesVencidos();
+
   let whereClauses = [];
   let params = [];
 
@@ -364,9 +430,9 @@ function createLoanApplication(data) {
   const now = new Date();
   const fecha_solicitud = now.toISOString().split('T')[0];
 
-  // Due date: 30 days per installment
+  // Due date: 28 days (4 weeks) per installment
   const vencimiento = new Date(now);
-  vencimiento.setDate(vencimiento.getDate() + (30 * cuotas));
+  vencimiento.setDate(vencimiento.getDate() + (28 * cuotas));
   const fecha_vencimiento = vencimiento.toISOString().split('T')[0];
 
   // 1. Get or Create Client
