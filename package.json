@@ -1,0 +1,22 @@
+{
+  "name": "prestamos-wilmar-pineda",
+  "version": "1.0.0",
+  "description": "Plataforma de préstamos de dinero Wilmar Pineda en Colombia con tasa del 20%, pasarela de pagos multicanal y base de datos de control de deudores.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "prestamos",
+    "colombia",
+    "fintech",
+    "wilmar-pineda",
+    "pse",
+    "nequi",
+    "daviplata",
+    "sqlite"
+  ],
+  "author": "Wilmar Pineda",
+  "license": "MIT"
+}

@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wilmar Pineda | Préstamos en Línea 20% COP</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            },
+            navy: {
+              800: '#1e293b',
+              900: '#0f172a',
+              950: '#030712'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SweetAlert2 for notifications -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* Custom styles and animations */
+    .slider-thumb::-webkit-slider-thumb {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #059669;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(5, 150, 105, 0.5);
+      border: 3px solid #ffffff;
+    }
+    .slider-thumb::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #059669;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(5, 150, 105, 0.5);
+      border: 3px solid #ffffff;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printArea, #printArea * {
+        visibility: visible;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href="#" onclick="showSection('simulador'); return false;" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
+          <i data-lucide="wallet-cards" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-2xl font-black tracking-tight text-navy-900">Wilmar <span class="text-brand-600">Pineda</span></span>
+          <p class="text-xs font-semibold text-slate-600 -mt-1 tracking-wide">Préstamos en línea • 20% Tasa Fija</p>
+        </div>
+      </a>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-100 p-1.5 rounded-full border border-slate-200">
+        <button onclick="showSection('simulador')" id="nav-simulador" class="px-5 py-2 rounded-full text-sm font-semibold text-brand-700 bg-white shadow-sm transition-all flex items-center gap-2">
+          <i data-lucide="calculator" class="w-4 h-4"></i> Simulador
+        </button>
+        <button onclick="showSection('consulta')" id="nav-consulta" class="px-5 py-2 rounded-full text-sm font-medium text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4"></i> Consultar y Pagar
+        </button>
+        <button onclick="showSection('metodos')" id="nav-metodos" class="px-5 py-2 rounded-full text-sm font-medium text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2">
+          <i data-lucide="credit-card" class="w-4 h-4"></i> Medios de Pago
+        </button>
+        <button onclick="showSection('admin')" id="nav-admin" class="px-5 py-2 rounded-full text-sm font-medium text-slate-600 hover:text-slate-900 transition-all flex items-center gap-2 relative">
+          <i data-lucide="database" class="w-4 h-4 text-emerald-600"></i> Base de Datos
+          <span id="badge-deudores-nav" class="ml-1 bg-amber-500 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full">...</span>
+        </button>
+      </nav>
+
+      <!-- Action Button -->
+      <div class="flex items-center gap-3">
+        <button onclick="abrirModalSolicitud()" class="hidden sm:inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-brand-500/20 hover:shadow-lg transition-all transform active:scale-95">
+          <i data-lucide="sparkles" class="w-4 h-4"></i> Solicitar Dinero
+        </button>
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Mobile Menu dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-4 space-y-2">
+      <button onclick="showSection('simulador'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+        <i data-lucide="calculator" class="w-4 h-4"></i> Simulador de Préstamos
+      </button>
+      <button onclick="showSection('consulta'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+        <i data-lucide="search" class="w-4 h-4"></i> Consultar Crédito / Pagar
+      </button>
+      <button onclick="showSection('metodos'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-2">
+        <i data-lucide="credit-card" class="w-4 h-4"></i> Medios de Pago
+      </button>
+      <button onclick="showSection('admin'); toggleMobileMenu();" class="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex items-center gap-2">
+        <i data-lucide="database" class="w-4 h-4"></i> Base de Datos (Quién Debe / Quién No)
+      </button>
+      <button onclick="abrirModalSolicitud(); toggleMobileMenu();" class="w-full bg-brand-600 text-white font-bold py-3 rounded-xl text-center text-sm shadow mt-2">
+        Solicitar Dinero Ahora
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-grow">
+
+    <!-- ======================================================== -->
+    <!-- SECCIÓN 1: SIMULADOR DE PRÉSTAMOS (ESTILO SOLVENTA)     -->
+    <!-- ======================================================== -->
+    <section id="section-simulador" class="block">
+      
+      <!-- Hero -->
+      <div class="relative overflow-hidden bg-gradient-to-b from-emerald-50/60 via-white to-slate-50 pt-12 pb-20 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <!-- Left copy -->
+            <div class="lg:col-span-6 space-y-6 text-center lg:text-left">
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-100/80 text-brand-800 text-xs font-bold uppercase tracking-wider border border-brand-200">
+                <i data-lucide="badge-check" class="w-4 h-4 text-brand-600"></i> Desembolso Inmediato en Colombia
+              </div>
+
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-navy-950 tracking-tight leading-tight">
+                Préstamos de dinero <br class="hidden sm:inline">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-emerald-500">fáciles y transparentes</span>
+              </h1>
+
+              <p class="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0">
+                Solicita desde <strong class="text-slate-900 font-bold">$50.000 COP</strong> hasta <strong class="text-slate-900 font-bold">$3.000.000 COP</strong> con una tasa fija del <strong class="text-brand-700 font-bold">20%</strong>. Recibe tu dinero directamente en Nequi, Daviplata o tu cuenta bancaria.
+              </p>
+
+              <!-- Value pills -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="percent" class="w-4 h-4"></i>
+                  </div>
+                  <div class="text-left">
+                    <p class="text-xs text-slate-600">Tasa Fija</p>
+                    <p class="text-sm font-bold text-slate-800">20% Sin Letra Chica</p>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                  </div>
+                  <div class="text-left">
+                    <p class="text-xs text-slate-600">Desembolso</p>
+                    <p class="text-sm font-bold text-slate-800">Menos de 2 horas</p>
+                  </div>
+                </div>
+
+                <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 col-span-2 sm:col-span-1">
+                  <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <i data-lucide="smartphone" class="w-4 h-4"></i>
+                  </div>
+                  <div class="text-left">
+                    <p class="text-xs text-slate-600">Medios de Pago</p>
+                    <p class="text-sm font-bold text-slate-800">PSE, Nequi, Efectivo</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick shortcut to lookup -->
+              <div class="pt-4 flex flex-wrap gap-4 justify-center lg:justify-start items-center text-sm text-slate-600">
+                <span>¿Ya tienes un crédito activo?</span>
+                <button onclick="showSection('consulta')" class="text-brand-700 font-bold hover:underline flex items-center gap-1">
+                  Consulta cuánto debes y paga en línea <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Right: Interactive Loan Calculator (Solventa Inspired) -->
+            <div class="lg:col-span-6">
+              <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl shadow-slate-300/60 border border-slate-200 relative">
+                
+                <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+                  <div>
+                    <h2 class="text-xl font-black text-slate-900 flex items-center gap-2">
+                      <i data-lucide="calculator" class="w-5 h-5 text-brand-600"></i> Simula tu Préstamo
+                    </h2>
+                    <p class="text-xs text-slate-600">Elige cuánto necesitas y el plazo</p>
+                  </div>
+                  <span class="bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold px-3 py-1 rounded-full">
+                    Tasa 20% COP
+                  </span>
+                </div>
+
+                <!-- Slider Monto -->
+                <div class="mt-6 space-y-4">
+                  <div class="flex justify-between items-baseline">
+                    <label class="text-sm font-bold text-slate-700">¿Cuánto dinero necesitas?</label>
+                    <span id="display-monto" class="text-2xl sm:text-3xl font-black text-brand-600 tracking-tight">
+                      $ 500.000 COP
+                    </span>
+                  </div>
+
+                  <input 
+                    type="range" 
+                    id="slider-monto" 
+                    min="50000" 
+                    max="3000000" 
+                    step="10000" 
+                    value="500000" 
+                    class="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb accent-brand-600"
+                    oninput="actualizarSimulador()"
+                  >
+
+                  <div class="flex justify-between text-xs text-slate-600 font-medium">
+                    <span>Mín: $50.000 COP</span>
+                    <span>Máx: $3.000.000 COP</span>
+                  </div>
+
+                  <!-- Quick Amount Pills -->
+                  <div class="flex flex-wrap gap-2 pt-1">
+                    <button type="button" onclick="setMonto(100000)" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 border border-slate-200 transition-colors">$100.000</button>
+                    <button type="button" onclick="setMonto(300000)" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 border border-slate-200 transition-colors">$300.000</button>
+                    <button type="button" onclick="setMonto(500000)" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 border border-slate-200 transition-colors">$500.000</button>
+                    <button type="button" onclick="setMonto(1000000)" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 border border-slate-200 transition-colors">$1.000.000</button>
+                    <button type="button" onclick="setMonto(2000000)" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 border border-slate-200 transition-colors">$2.000.000</button>
+                    <button type="button" onclick="setMonto(3000000)" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-600 border border-slate-200 transition-colors">$3.000.000</button>
+                  </div>
+                </div>
+
+                <!-- Slider Cuotas / Plazo -->
+                <div class="mt-8 space-y-3">
+                  <div class="flex justify-between items-baseline">
+                    <label class="text-sm font-bold text-slate-700">Plazo para pagar:</label>
+                    <span id="display-cuotas" class="text-base font-bold text-slate-900">
+                      1 Cuota (30 días)
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-4 gap-2">
+                    <button type="button" onclick="setCuotas(1)" id="btn-cuota-1" class="cuota-btn py-2 text-xs font-bold rounded-xl border border-brand-600 bg-brand-50 text-brand-700">1 Cuota</button>
+                    <button type="button" onclick="setCuotas(2)" id="btn-cuota-2" class="cuota-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">2 Cuotas</button>
+                    <button type="button" onclick="setCuotas(3)" id="btn-cuota-3" class="cuota-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">3 Cuotas</button>
+                    <button type="button" onclick="setCuotas(6)" id="btn-cuota-6" class="cuota-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">6 Cuotas</button>
+                  </div>
+                </div>
+
+                <!-- Desglose Financiero Transparente (Estilo Solventa) -->
+                <div class="mt-8 bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-2.5">
+                  <div class="flex justify-between text-sm text-slate-600">
+                    <span>Monto solicitado:</span>
+                    <span id="resumen-monto" class="font-bold text-slate-900">$ 500.000 COP</span>
+                  </div>
+                  <div class="flex justify-between text-sm text-slate-600">
+                    <span class="flex items-center gap-1">
+                      Intereses fijos pactados (20%):
+                      <i data-lucide="info" class="w-3.5 h-3.5 text-slate-600"></i>
+                    </span>
+                    <span id="resumen-interes" class="font-bold text-emerald-600">+$ 100.000 COP</span>
+                  </div>
+                  <div class="flex justify-between text-sm text-slate-600">
+                    <span>Cargos de desembolso:</span>
+                    <span class="font-semibold text-emerald-600">$ 0 COP (Gratis)</span>
+                  </div>
+                  <div class="pt-2 border-t border-slate-200 flex justify-between items-baseline">
+                    <div>
+                      <span class="text-xs uppercase font-extrabold text-slate-600 tracking-wider">Total a pagar:</span>
+                      <p id="resumen-cuota-detalle" class="text-xs text-slate-600 font-medium">1 pago único</p>
+                    </div>
+                    <span id="resumen-total" class="text-2xl font-black text-navy-950">
+                      $ 600.000 COP
+                    </span>
+                  </div>
+                </div>
+
+                <!-- CTA Button -->
+                <button 
+                  onclick="abrirModalSolicitudConDatos()" 
+                  class="mt-6 w-full py-4 rounded-2xl bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-base shadow-lg shadow-brand-600/30 hover:shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-2 group"
+                >
+                  <span>¡Solicitar Préstamo Ahora!</span>
+                  <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+
+                <p class="text-center text-xs text-slate-600 mt-3 flex items-center justify-center gap-1">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i> Aprobación inmediata sin codeudor
+                </p>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Sección de Características / Por qué Wilmar Pineda -->
+      <div class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="text-center max-w-3xl mx-auto mb-12">
+            <h2 class="text-3xl font-black text-navy-950">¿Cómo funciona Wilmar Pineda?</h2>
+            <p class="text-slate-600 mt-2">Préstamos personales 100% en línea diseñados para tu tranquilidad en 3 sencillos pasos.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-3">
+              <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-brand-700 mx-auto flex items-center justify-center font-black text-xl">
+                1
+              </div>
+              <h3 class="text-lg font-bold text-slate-900">1. Simula y Solicita</h3>
+              <p class="text-sm text-slate-600">Selecciona desde $50.000 hasta $3.000.000 COP. Ingresa tus datos básicos de contacto e identificación.</p>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-3">
+              <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 mx-auto flex items-center justify-center font-black text-xl">
+                2
+              </div>
+              <h3 class="text-lg font-bold text-slate-900">2. Aprobación Inmediata</h3>
+              <p class="text-sm text-slate-600">Validamos tu información y desembolsamos el dinero en tu cuenta bancaria, Nequi o Daviplata en minutos.</p>
+            </div>
+
+            <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-3">
+              <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-700 mx-auto flex items-center justify-center font-black text-xl">
+                3
+              </div>
+              <h3 class="text-lg font-bold text-slate-900">3. Paga Fácilmente</h3>
+              <p class="text-sm text-slate-600">Paga tu crédito con 20% de interés a través de PSE, Nequi, Daviplata, tarjetas o efectivo en Efecty/Baloto.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECCIÓN 2: CONSULTA DE CLIENTE Y PAGO EN LÍNEA          -->
+    <!-- ======================================================== -->
+    <section id="section-consulta" class="hidden py-12 bg-slate-50">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2 mb-8">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold uppercase tracking-wider">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i> Portal de Autogestión
+          </div>
+          <h2 class="text-3xl font-black text-navy-950">Consulta tu Estado de Cuenta y Paga</h2>
+          <p class="text-slate-600 text-sm max-w-xl mx-auto">
+            Ingresa tu número de documento de identidad para verificar si debes dinero, ver tus cuotas y pagar por PSE, Nequi, Daviplata o Efecty.
+          </p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-200 mb-8">
+          <form onsubmit="consultarCredito(event)" class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-grow">
+              <i data-lucide="id-card" class="w-5 h-5 text-slate-600 absolute left-4 top-1/2 -translate-y-1/2"></i>
+              <input 
+                type="text" 
+                id="input-consulta-cedula" 
+                placeholder="Ingresa tu Cédula de Ciudadanía (ej. 1020304050)" 
+                class="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold text-slate-800 placeholder-slate-600"
+                required
+              >
+            </div>
+            <button 
+              type="submit" 
+              class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-8 py-3.5 rounded-2xl shadow-md flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+            >
+              <i data-lucide="search" class="w-5 h-5"></i>
+              <span>Consultar</span>
+            </button>
+          </form>
+
+          <!-- Suggestions for demo testing -->
+          <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span class="font-semibold text-slate-600">Cédulas de prueba precargadas:</span>
+            <button type="button" onclick="probarCedula('1020304050')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg font-mono text-slate-700 font-semibold">1020304050 (Debe $1.2M)</button>
+            <button type="button" onclick="probarCedula('1035987654')" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-mono font-semibold">1035987654 (En Mora $360k)</button>
+            <button type="button" onclick="probarCedula('1098765432')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-mono font-semibold">1098765432 (Paz y Salvo $0)</button>
+          </div>
+        </div>
+
+        <!-- Result Container -->
+        <div id="resultado-consulta" class="hidden space-y-6">
+          <!-- Dynamic Content Injected by JS -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECCIÓN 3: MEDIOS DE PAGO COLOMBIA (SOLVENTA)            -->
+    <!-- ======================================================== -->
+    <section id="section-metodos" class="hidden py-12 bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        
+        <div class="text-center max-w-3xl mx-auto mb-12">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Todos los medios de pago aceptados
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-black text-navy-950">Paga tu crédito como prefieras</h2>
+          <p class="text-slate-600 mt-2">
+            Hemos integrado las principales opciones de pago en Colombia para que canceles tu deuda o tus cuotas de manera rápida, segura y sin salir de casa.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- PSE -->
+          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:shadow-lg transition-all space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-blue-500/20">
+              PSE
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">PSE (Débito Bancario)</h3>
+            <p class="text-sm text-slate-600">Paga directamente desde cualquier cuenta bancaria en Colombia: Bancolombia, Davivienda, Banco de Bogotá, BBVA, Banco de Occidente, Scotiabank Colpatria y más.</p>
+            <span class="inline-block text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              ✓ Acreditación Inmediata
+            </span>
+          </div>
+
+          <!-- Nequi -->
+          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:shadow-lg transition-all space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-purple-900 text-purple-300 flex items-center justify-center font-black text-xl shadow-md">
+              <i data-lucide="smartphone" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Nequi (Push & QR)</h3>
+            <p class="text-sm text-slate-600">Cancela desde la app Nequi en 5 segundos mediante notificación directa a tu número de celular o escaneando nuestro código QR oficial.</p>
+            <span class="inline-block text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+              ✓ Sin costos adicionales
+            </span>
+          </div>
+
+          <!-- Daviplata -->
+          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:shadow-lg transition-all space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-red-500/20">
+              DP
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Daviplata</h3>
+            <p class="text-sm text-slate-600">Transfiere de manera rápida con tu número de Daviplata. Recibe el comprobante instantáneo y actualización de saldo al instante.</p>
+            <span class="inline-block text-xs font-bold text-red-700 bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
+              ✓ Fácil y seguro
+            </span>
+          </div>
+
+          <!-- Tarjetas Crédito / Débito -->
+          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:shadow-lg transition-all space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black text-xl shadow-md">
+              <i data-lucide="credit-card" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Tarjetas Débito / Crédito</h3>
+            <p class="text-sm text-slate-600">Aceptamos Visa, MasterCard, y American Express emitidas en Colombia. Proceso encriptado con altos estándares de seguridad.</p>
+            <span class="inline-block text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+              ✓ Seguridad PCI-DSS
+            </span>
+          </div>
+
+          <!-- Efecty y Baloto -->
+          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:shadow-lg transition-all space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-yellow-500 text-slate-900 flex items-center justify-center font-black text-xl shadow-md">
+              <i data-lucide="store" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Efectivo (Efecty / Baloto / SuRed)</h3>
+            <p class="text-sm text-slate-600">Si prefieres pagar en efectivo, genera tu código de convenio y PIN para acercarte a cualquiera de los más de 20.000 puntos en todo el país.</p>
+            <span class="inline-block text-xs font-bold text-slate-700 bg-slate-200 px-2.5 py-1 rounded-full">
+              ✓ Más de 20.000 puntos físicos
+            </span>
+          </div>
+
+          <!-- Transferencia Bancaria Directa -->
+          <div class="p-6 rounded-3xl bg-slate-50 border border-slate-200 hover:shadow-lg transition-all space-y-4">
+            <div class="w-14 h-14 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-black text-xl shadow-md">
+              <i data-lucide="landmark" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Transferencia Bancaria</h3>
+            <p class="text-sm text-slate-600">Consignación directa en corresponsales o cuenta empresarial Bancolombia / Davivienda con validación automática de comprobante.</p>
+            <span class="inline-block text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              ✓ Cuenta Empresarial
+            </span>
+          </div>
+
+        </div>
+
+        <div class="mt-12 text-center bg-slate-900 text-white rounded-3xl p-8 max-w-3xl mx-auto shadow-xl">
+          <h3 class="text-2xl font-bold">¿Listo para simular o pagar tu crédito?</h3>
+          <p class="text-slate-300 text-sm mt-2">Disfruta de la mejor experiencia de préstamos en línea en Colombia.</p>
+          <div class="mt-6 flex flex-wrap justify-center gap-4">
+            <button onclick="showSection('simulador')" class="bg-brand-500 hover:bg-brand-600 text-white font-bold px-6 py-3 rounded-xl shadow transition-all">
+              Simular Préstamo
+            </button>
+            <button onclick="showSection('consulta')" class="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-xl transition-all">
+              Consultar Mi Crédito
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- SECCIÓN 4: BASE DE DATOS Y PANEL DE ADMINISTRACIÓN       -->
+    <!-- (QUIÉN DEBE DINERO Y QUIÉN NO - REQUISITO CLAVE)         -->
+    <!-- ======================================================== -->
+    <section id="section-admin" class="hidden py-8 bg-slate-100 min-h-screen">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        
+        <!-- Top Title Bar -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+          <div>
+            <div class="flex items-center gap-3">
+              <h2 class="text-2xl font-black text-navy-950 flex items-center gap-2">
+                <i data-lucide="database" class="w-6 h-6 text-brand-600"></i>
+                Base de Datos y Control de Cartera
+              </h2>
+              <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> SQLite Activo
+              </span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-600 mt-1">
+              Registro centralizado en tiempo real: monitorea <strong>quién debe dinero</strong>, <strong>quién ya pagó (Paz y Salvo)</strong> y gestiona cobranzas.
+            </p>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="abrirModalNuevoPrestamoManual()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow flex items-center gap-2 transition-all">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Nuevo Préstamo
+            </button>
+            <button onclick="exportarCSV()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow flex items-center gap-2 transition-all">
+              <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+            </button>
+            <button onclick="cargarMetricasYPrestamos()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 transition-all" title="Recargar base de datos">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Metrics Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          
+          <!-- Total Prestado -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-xs font-bold uppercase tracking-wider">Total Prestado</span>
+              <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                <i data-lucide="coins" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <p id="kpi-total-prestado" class="text-xl sm:text-2xl font-black text-slate-900 mt-2">$ 0 COP</p>
+            <p class="text-[11px] text-slate-600 mt-1">Capital otorgado</p>
+          </div>
+
+          <!-- Total Intereses (20%) -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between text-slate-600">
+              <span class="text-xs font-bold uppercase tracking-wider">Intereses (20%)</span>
+              <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <p id="kpi-intereses" class="text-xl sm:text-2xl font-black text-emerald-600 mt-2">$ 0 COP</p>
+            <p class="text-[11px] text-slate-600 mt-1">Ganancia por el 20%</p>
+          </div>
+
+          <!-- QUIÉN DEBE DINERO (Por cobrar) -->
+          <div class="bg-white p-5 rounded-2xl border-2 border-amber-300 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between text-amber-700">
+              <span class="text-xs font-extrabold uppercase tracking-wider">🔴 DEBEN DINERO</span>
+              <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs" id="kpi-badge-deudores">
+                0
+              </div>
+            </div>
+            <p id="kpi-por-cobrar" class="text-xl sm:text-2xl font-black text-amber-600 mt-2">$ 0 COP</p>
+            <p class="text-[11px] text-slate-600 mt-1" id="kpi-deudores-label">0 clientes con saldo activo</p>
+          </div>
+
+          <!-- QUIÉN NO DEBE (Total Recaudado / Paz y Salvo) -->
+          <div class="bg-white p-5 rounded-2xl border-2 border-emerald-300 shadow-sm relative overflow-hidden">
+            <div class="flex items-center justify-between text-emerald-700">
+              <span class="text-xs font-extrabold uppercase tracking-wider">🟢 YA PAGARON</span>
+              <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs" id="kpi-badge-paz">
+                0
+              </div>
+            </div>
+            <p id="kpi-recaudado" class="text-xl sm:text-2xl font-black text-brand-600 mt-2">$ 0 COP</p>
+            <p class="text-[11px] text-slate-600 mt-1" id="kpi-paz-label">0 créditos a Paz y Salvo</p>
+          </div>
+
+          <!-- Cartera en Mora -->
+          <div class="bg-white p-5 rounded-2xl border border-red-200 shadow-sm col-span-2 lg:col-span-1">
+            <div class="flex items-center justify-between text-red-600">
+              <span class="text-xs font-bold uppercase tracking-wider">⚠️ EN MORA</span>
+              <div class="w-7 h-7 rounded-lg bg-red-100 text-red-700 flex items-center justify-center">
+                <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+              </div>
+            </div>
+            <p id="kpi-mora-monto" class="text-xl sm:text-2xl font-black text-red-600 mt-2">$ 0 COP</p>
+            <p class="text-[11px] text-red-600 font-semibold mt-1" id="kpi-mora-cantidad">0 préstamos vencidos</p>
+          </div>
+
+        </div>
+
+        <!-- Filter Tabs & Search Bar -->
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          
+          <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+            
+            <!-- Quick View Filters -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button 
+                onclick="filtrarPrestamos('todos')" 
+                id="btn-filtro-todos"
+                class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow-sm"
+              >
+                📋 Todos (<span id="count-todos">0</span>)
+              </button>
+              
+              <button 
+                onclick="filtrarPrestamos('deben')" 
+                id="btn-filtro-deben"
+                class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-amber-50 hover:text-amber-800"
+              >
+                🔴 Quién Debe Dinero (<span id="count-deben">0</span>)
+              </button>
+
+              <button 
+                onclick="filtrarPrestamos('pagados')" 
+                id="btn-filtro-pagados"
+                class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800"
+              >
+                🟢 Quién Ya Pagó / Paz y Salvo (<span id="count-pagados">0</span>)
+              </button>
+
+              <button 
+                onclick="filtrarPrestamos('mora')" 
+                id="btn-filtro-mora"
+                class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-800"
+              >
+                ⚠️ En Mora (<span id="count-mora">0</span>)
+              </button>
+
+              <button 
+                onclick="filtrarPrestamos('pendientes')" 
+                id="btn-filtro-pendientes"
+                class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-800"
+              >
+                ⏳ Por Aprobar (<span id="count-pendientes">0</span>)
+              </button>
+            </div>
+
+            <!-- Instant Search Input -->
+            <div class="relative min-w-[260px]">
+              <i data-lucide="search" class="w-4 h-4 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input 
+                type="text" 
+                id="admin-search" 
+                placeholder="Buscar por Nombre, Cédula o Tel..." 
+                oninput="onSearchInput()"
+                class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+              >
+            </div>
+
+          </div>
+
+          <!-- Table Container -->
+          <div class="overflow-x-auto rounded-2xl border border-slate-200">
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                <tr>
+                  <th class="py-3.5 px-4">Código / Fecha</th>
+                  <th class="py-3.5 px-4">Cliente / Identificación</th>
+                  <th class="py-3.5 px-4">Contacto / Ciudad</th>
+                  <th class="py-3.5 px-4 text-right">Monto Original</th>
+                  <th class="py-3.5 px-4 text-right">Total c/ 20%</th>
+                  <th class="py-3.5 px-4 text-right">Abonado</th>
+                  <th class="py-3.5 px-4 text-right">Saldo Deuda</th>
+                  <th class="py-3.5 px-4 text-center">Estado</th>
+                  <th class="py-3.5 px-4 text-center">Acciones Rápidas</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-prestamos-body" class="divide-y divide-slate-200 bg-white">
+                <!-- Rows injected dynamically by JS -->
+                <tr>
+                  <td colspan="9" class="text-center py-10 text-slate-600">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                      <div class="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+                      <p>Cargando registros de la base de datos...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Table footer -->
+          <div class="flex flex-col sm:flex-row justify-between items-center text-xs text-slate-600 pt-2 gap-2">
+            <span id="tabla-registros-info">Mostrando registros</span>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span> <span>Debe Dinero</span>
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 ml-2"></span> <span>Paz y Salvo (Pagado)</span>
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 ml-2"></span> <span>En Mora</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: SOLICITUD DE PRÉSTAMO (NUEVO CLIENTE)             -->
+  <!-- ======================================================== -->
+  <div id="modal-solicitud" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
+      
+      <!-- Modal Header -->
+      <div class="flex justify-between items-start pb-4 border-b border-slate-200">
+        <div>
+          <span class="text-xs font-bold text-brand-600 uppercase tracking-wider">Solicitud en Línea</span>
+          <h3 class="text-2xl font-black text-navy-950">Solicitar Préstamo de Dinero</h3>
+        </div>
+        <button onclick="cerrarModalSolicitud()" class="p-2 rounded-xl text-slate-600 hover:bg-slate-100">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- Resumen Préstamo Seleccionado -->
+      <div class="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex justify-between items-center text-xs sm:text-sm">
+        <div>
+          <span class="text-slate-600">Monto:</span> <strong id="modal-resumen-monto" class="text-emerald-800 text-base font-black">$ 500.000 COP</strong>
+        </div>
+        <div>
+          <span class="text-slate-600">Interés (20%):</span> <strong id="modal-resumen-interes" class="text-emerald-800 font-bold">+$ 100.000</strong>
+        </div>
+        <div>
+          <span class="text-slate-600">Total a Pagar:</span> <strong id="modal-resumen-total" class="text-navy-950 text-base font-black">$ 600.000 COP</strong>
+        </div>
+      </div>
+
+      <!-- Formulario -->
+      <form id="form-solicitud" onsubmit="enviarSolicitudPrestamo(event)" class="mt-6 space-y-4">
+        
+        <input type="hidden" id="solicitud-monto" name="monto_solicitado" value="500000">
+        <input type="hidden" id="solicitud-cuotas" name="plazo_cuotas" value="1">
+
+        <h4 class="text-xs font-extrabold uppercase text-slate-600 tracking-wider">1. Datos Personales</h4>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo *</label>
+            <input type="text" name="nombre_completo" required placeholder="Ej. Juan Carlos Pérez" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Cédula de Ciudadanía *</label>
+            <input type="text" name="numero_documento" required placeholder="Ej. 1020304050" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-mono">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Celular / WhatsApp *</label>
+            <input type="tel" name="telefono" required placeholder="Ej. 3101234567" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico *</label>
+            <input type="email" name="email" required placeholder="correo@ejemplo.com" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Ciudad *</label>
+            <input type="text" name="ciudad" required placeholder="Ej. Bogotá, Medellín, Cali..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Dirección de Residencia</label>
+            <input type="text" name="direccion" placeholder="Ej. Calle 10 # 20-30" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
+          </div>
+        </div>
+
+        <h4 class="text-xs font-extrabold uppercase text-slate-600 tracking-wider pt-2">2. Información para Desembolso</h4>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Banco / Billetera *</label>
+            <select name="banco_desembolso" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+              <option value="Bancolombia">Bancolombia</option>
+              <option value="Nequi" selected>Nequi</option>
+              <option value="Daviplata">Daviplata</option>
+              <option value="Davivienda">Davivienda</option>
+              <option value="Banco de Bogotá">Banco de Bogotá</option>
+              <option value="BBVA">BBVA</option>
+              <option value="Scotiabank Colpatria">Scotiabank Colpatria</option>
+              <option value="Dale!">Dale!</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Tipo de Cuenta *</label>
+            <select name="tipo_cuenta" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-medium">
+              <option value="Ahorros">Cuenta de Ahorros</option>
+              <option value="Billetera Digital" selected>Billetera Digital</option>
+              <option value="Corriente">Cuenta Corriente</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Número de Cuenta / Celular *</label>
+            <input type="text" name="numero_cuenta" required placeholder="Número donde recibirás el dinero" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-mono">
+          </div>
+        </div>
+
+        <div class="pt-2">
+          <label class="flex items-start gap-2 cursor-pointer text-xs text-slate-600">
+            <input type="checkbox" required checked class="mt-0.5 rounded text-brand-600 focus:ring-brand-500">
+            <span>Acepto las condiciones del crédito con una tasa fija del <strong>20% de interés</strong> y autorizo el tratamiento de mis datos de acuerdo con la legislación colombiana.</span>
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-4 flex gap-3 justify-end">
+          <button type="button" onclick="cerrarModalSolicitud()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-submit-solicitud" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold shadow-md shadow-brand-500/20 flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Confirmar y Enviar Solicitud
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: PASARELA DE PAGO INTERACTIVA (TODOS LOS PAGOS)     -->
+  <!-- ======================================================== -->
+  <div id="modal-pago" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
+      
+      <div class="flex justify-between items-start pb-4 border-b border-slate-200">
+        <div>
+          <span class="text-xs font-bold text-brand-600 uppercase tracking-wider">Pasarela de Pagos Colombia</span>
+          <h3 class="text-2xl font-black text-navy-950">Realizar Pago de Crédito</h3>
+        </div>
+        <button onclick="cerrarModalPago()" class="p-2 rounded-xl text-slate-600 hover:bg-slate-100">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- Resumen de deuda actual -->
+      <div class="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+        <div class="flex justify-between text-xs text-slate-600">
+          <span>Código de Crédito:</span>
+          <span id="pago-codigo-prestamo" class="font-mono font-bold text-slate-900">SOLV-0000</span>
+        </div>
+        <div class="flex justify-between text-xs text-slate-600">
+          <span>Titular:</span>
+          <span id="pago-cliente-nombre" class="font-bold text-slate-900">Cliente</span>
+        </div>
+        <div class="flex justify-between text-sm pt-2 border-t border-slate-200">
+          <span class="font-bold text-slate-700">Saldo Pendiente Actual:</span>
+          <span id="pago-saldo-pendiente" class="font-black text-amber-600 text-lg">$ 0 COP</span>
+        </div>
+      </div>
+
+      <!-- Formulario de Pago -->
+      <form id="form-pago" onsubmit="procesarPago(event)" class="mt-6 space-y-5">
+        <input type="hidden" id="pago-prestamo-id" name="prestamo_id">
+        
+        <!-- Monto a pagar -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Monto a Pagar (COP) *</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-600">$</span>
+            <input 
+              type="number" 
+              id="pago-monto" 
+              name="monto" 
+              min="1000" 
+              required 
+              class="w-full pl-8 pr-4 py-3 rounded-2xl border border-slate-300 font-black text-xl text-navy-950 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            >
+          </div>
+          <div class="flex gap-2 mt-2">
+            <button type="button" onclick="setMontoPagoCompleto()" class="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-800 rounded-lg hover:bg-emerald-100 border border-emerald-200">
+              Pagar Deuda Total
+            </button>
+            <button type="button" onclick="setMontoPagoMitad()" class="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200">
+              Abonar 50%
+            </button>
+          </div>
+        </div>
+
+        <!-- Método de Pago -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-2">Selecciona Medio de Pago en Colombia *</label>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            
+            <label class="pago-metodo-card cursor-pointer p-3 rounded-2xl border-2 border-brand-500 bg-brand-50/50 flex flex-col items-center justify-center text-center gap-1 transition-all">
+              <input type="radio" name="metodo_pago" value="PSE" checked class="hidden" onchange="seleccionarMetodo(this)">
+              <div class="w-8 h-8 rounded-lg bg-blue-600 text-white font-black text-xs flex items-center justify-center">PSE</div>
+              <span class="text-xs font-bold text-slate-900">PSE</span>
+              <span class="text-[10px] text-slate-600">Débito cuenta</span>
+            </label>
+
+            <label class="pago-metodo-card cursor-pointer p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 flex flex-col items-center justify-center text-center gap-1 transition-all">
+              <input type="radio" name="metodo_pago" value="NEQUI" class="hidden" onchange="seleccionarMetodo(this)">
+              <div class="w-8 h-8 rounded-lg bg-purple-900 text-white font-black text-xs flex items-center justify-center">NEQ</div>
+              <span class="text-xs font-bold text-slate-900">Nequi</span>
+              <span class="text-[10px] text-slate-600">Push o QR</span>
+            </label>
+
+            <label class="pago-metodo-card cursor-pointer p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 flex flex-col items-center justify-center text-center gap-1 transition-all">
+              <input type="radio" name="metodo_pago" value="DAVIPLATA" class="hidden" onchange="seleccionarMetodo(this)">
+              <div class="w-8 h-8 rounded-lg bg-red-600 text-white font-black text-xs flex items-center justify-center">DP</div>
+              <span class="text-xs font-bold text-slate-900">Daviplata</span>
+              <span class="text-[10px] text-slate-600">Directo app</span>
+            </label>
+
+            <label class="pago-metodo-card cursor-pointer p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 flex flex-col items-center justify-center text-center gap-1 transition-all">
+              <input type="radio" name="metodo_pago" value="TARJETA" class="hidden" onchange="seleccionarMetodo(this)">
+              <div class="w-8 h-8 rounded-lg bg-amber-500 text-white font-black text-xs flex items-center justify-center">
+                <i data-lucide="credit-card" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-900">Tarjeta</span>
+              <span class="text-[10px] text-slate-600">Débito/Crédito</span>
+            </label>
+
+            <label class="pago-metodo-card cursor-pointer p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 flex flex-col items-center justify-center text-center gap-1 transition-all">
+              <input type="radio" name="metodo_pago" value="EFECTY" class="hidden" onchange="seleccionarMetodo(this)">
+              <div class="w-8 h-8 rounded-lg bg-yellow-500 text-slate-900 font-black text-xs flex items-center justify-center">EF</div>
+              <span class="text-xs font-bold text-slate-900">Efecty / Baloto</span>
+              <span class="text-[10px] text-slate-600">Convenio</span>
+            </label>
+
+            <label class="pago-metodo-card cursor-pointer p-3 rounded-2xl border-2 border-slate-200 bg-white hover:border-slate-300 flex flex-col items-center justify-center text-center gap-1 transition-all">
+              <input type="radio" name="metodo_pago" value="TRANSFERENCIA" class="hidden" onchange="seleccionarMetodo(this)">
+              <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white font-black text-xs flex items-center justify-center">
+                <i data-lucide="landmark" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-bold text-slate-900">Transferencia</span>
+              <span class="text-[10px] text-slate-600">Bancolombia</span>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Campos dinámicos según método de pago -->
+        <div id="pago-detalles-metodo" class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-3">
+          <p class="font-bold text-slate-800">Datos para transacción PSE:</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-slate-600 mb-1">Banco emisor:</label>
+              <select class="w-full p-2 rounded-lg border border-slate-300 font-medium">
+                <option>Bancolombia</option>
+                <option>Davivienda</option>
+                <option>Banco de Bogotá</option>
+                <option>BBVA Colombia</option>
+                <option>Scotiabank Colpatria</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-600 mb-1">Tipo de Cliente:</label>
+              <select class="w-full p-2 rounded-lg border border-slate-300 font-medium">
+                <option>Persona Natural</option>
+                <option>Persona Jurídica</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2 flex gap-3 justify-end">
+          <button type="button" onclick="cerrarModalPago()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-submit-pago" class="px-7 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-extrabold shadow-lg shadow-brand-500/20 flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i> Confirmar y Pagar Ahora
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CERTIFICADO DE PAZ Y SALVO / RECIBO IMPRIMIBLE    -->
+  <!-- ======================================================== -->
+  <div id="modal-recibo" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
+      
+      <div id="printArea" class="p-6 border-2 border-slate-800 rounded-2xl relative bg-white">
+        
+        <!-- Sello de Agua de Paz y Salvo si aplica -->
+        <div id="recibo-watermark" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+          <span class="text-7xl font-black text-emerald-800 rotate-[-25deg] uppercase">PAZ Y SALVO</span>
+        </div>
+
+        <div class="flex justify-between items-start pb-4 border-b border-slate-200">
+          <div>
+            <h2 class="text-2xl font-black text-navy-950">Wilmar <span class="text-brand-600">Pineda</span></h2>
+            <p class="text-xs text-slate-600">Servicios Financieros • Medellín, Colombia</p>
+          </div>
+          <div class="text-right">
+            <span id="recibo-tipo-titulo" class="px-3 py-1 rounded-full text-xs font-black uppercase bg-emerald-100 text-emerald-800">
+              Certificado de Paz y Salvo
+            </span>
+            <p id="recibo-fecha" class="text-xs text-slate-600 mt-1">Fecha: 06/11/2026</p>
+          </div>
+        </div>
+
+        <div class="my-6 space-y-3 text-xs sm:text-sm">
+          <p class="text-slate-700">Por medio del presente documento, <strong>Wilmar Pineda</strong> certifica que el cliente:</p>
+          
+          <div class="p-3 bg-slate-50 rounded-xl space-y-1">
+            <p><strong>Titular:</strong> <span id="recibo-nombre">-</span></p>
+            <p><strong>Cédula:</strong> <span id="recibo-cedula" class="font-mono">-</span></p>
+            <p><strong>Código de Préstamo:</strong> <span id="recibo-codigo" class="font-mono">-</span></p>
+            <p><strong>Monto Prestado:</strong> <span id="recibo-monto-prestado">-</span> (Tasa Interés: 20%)</p>
+            <p><strong>Total Liquidado:</strong> <span id="recibo-total-pactado">-</span></p>
+          </div>
+
+          <div id="recibo-estado-box" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-medium">
+            Se hace constar que dicho crédito se encuentra a la fecha <strong>TOTALMENTE CANCELADO Y A PAZ Y SALVO</strong> por todo concepto de capital e intereses.
+          </div>
+        </div>
+
+        <div class="pt-6 border-t border-slate-200 flex justify-between items-end text-xs text-slate-600">
+          <div>
+            <div class="w-32 border-b border-slate-400 mb-1"></div>
+            <p class="font-bold text-slate-800">Firma Autorizada</p>
+            <p>Gerencia de Crédito y Cartera</p>
+          </div>
+          <div class="text-right">
+            <p class="font-mono text-[10px]" id="recibo-id-ref">REF-000000</p>
+            <p class="text-[10px]">Verificado digitalmente</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-6 flex justify-end gap-3">
+        <button onclick="cerrarModalRecibo()" class="px-5 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50">
+          Cerrar
+        </button>
+        <button onclick="window.print()" class="px-5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shadow flex items-center gap-1.5 hover:bg-slate-800">
+          <i data-lucide="printer" class="w-4 h-4"></i> Imprimir / Guardar PDF
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-navy-950 text-slate-400 py-12 border-t border-slate-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        
+        <div class="space-y-3">
+          <span class="text-2xl font-black tracking-tight text-white">Wilmar <span class="text-brand-500">Pineda</span></span>
+          <p class="text-xs leading-relaxed text-slate-400">
+            Plataforma financiera digital en Colombia. Préstamos transparentes con tasa fija del 20%. Control de cartera y base de datos en tiempo real.
+          </p>
+          <p class="text-xs text-slate-400">© 2026 Wilmar Pineda. Todos los derechos reservados.</p>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-bold text-white mb-3">Límites y Condiciones</h4>
+          <ul class="text-xs space-y-2">
+            <li>Monto Mínimo: $50.000 COP</li>
+            <li>Monto Máximo: $3.000.000 COP</li>
+            <li>Tasa Fija: 20%</li>
+            <li>Plazo: 30 a 180 días</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-bold text-white mb-3">Medios de Pago Habilitados</h4>
+          <ul class="text-xs space-y-2">
+            <li>PSE Bancolombia / Davivienda</li>
+            <li>Nequi & Daviplata</li>
+            <li>Tarjetas Visa y Mastercard</li>
+            <li>Efecty / Baloto / SuRed</li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-bold text-white mb-3">Gestión y Cobranzas</h4>
+          <p class="text-xs text-slate-400 mb-2">Base de datos SQLite local para consultar quién debe dinero y emitir certificados de Paz y Salvo.</p>
+          <button onclick="showSection('admin')" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition-colors">
+            Acceder al Panel de Control
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript Logic -->
+  <script src="/app.js"></script>
+</body>
+</html>
