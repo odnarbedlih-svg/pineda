@@ -1,5 +1,6 @@
 // ========================================================
 // WILMAR PINEDA - PRÉSTAMOS COLOMBIA - CLIENT LOGIC (SPA)
+// Soporta tanto servidor local (SQLite) como GitHub Pages (localStorage)
 // ========================================================
 
 const API_BASE = '';
@@ -9,6 +10,7 @@ let currentPrestamosList = [];
 let currentFiltroAdmin = 'todos';
 let currentSearchAdmin = '';
 let prestamoSeleccionadoParaPago = null;
+let useLocalDB = false;
 
 // Currency Formatter for Colombian Pesos
 function formatCOP(num) {
@@ -30,12 +32,536 @@ function formatDate(dateStr) {
 }
 
 // ---------------------------------------------------------
+// MOTOR DE BASE DE DATOS LOCAL (PARA GITHUB PAGES / ONLINE)
+// ---------------------------------------------------------
+const LocalDB = {
+  KEY: 'wp_prestamos_db',
+
+  getRawData() {
+    try {
+      const data = localStorage.getItem(this.KEY);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      return null;
+    }
+  },
+
+  saveRawData(data) {
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error('Error guardando en localStorage', e);
+    }
+  },
+
+  init() {
+    const existing = this.getRawData();
+    if (existing && existing.prestamos && existing.prestamos.length > 0) {
+      this.recalcularInteresesVencidos();
+      return;
+    }
+
+    const now = new Date();
+    const formatDateObj = (d) => d.toISOString().split('T')[0];
+    const dateSubDays = (days) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - days);
+      return formatDateObj(d);
+    };
+    const dateAddDays = (days) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + days);
+      return formatDateObj(d);
+    };
+
+    const initialData = {
+      clientes: [
+        {
+          id: 1,
+          nombre_completo: 'Carlos Andrés Restrepo',
+          tipo_documento: 'CC',
+          numero_documento: '1020304050',
+          telefono: '3104567890',
+          email: 'carlos.restrepo@gmail.com',
+          ciudad: 'Medellín',
+          direccion: 'Calle 50 # 45-20',
+          banco_desembolso: 'Bancolombia',
+          tipo_cuenta: 'Ahorros',
+          numero_cuenta: '241-987654-12'
+        },
+        {
+          id: 2,
+          nombre_completo: 'Diana Marcela Gómez',
+          tipo_documento: 'CC',
+          numero_documento: '1035987654',
+          telefono: '3157891234',
+          email: 'diana.gomez@hotmail.com',
+          ciudad: 'Bogotá',
+          direccion: 'Carrera 15 # 85-30',
+          banco_desembolso: 'Nequi',
+          tipo_cuenta: 'Billetera Digital',
+          numero_cuenta: '3157891234'
+        },
+        {
+          id: 3,
+          nombre_completo: 'Felipe Santamaría',
+          tipo_documento: 'CC',
+          numero_documento: '1098765432',
+          telefono: '3001234567',
+          email: 'felipe.santa@yahoo.com',
+          ciudad: 'Cali',
+          direccion: 'Avenida 6N # 22-10',
+          banco_desembolso: 'Daviplata',
+          tipo_cuenta: 'Billetera Digital',
+          numero_cuenta: '3001234567'
+        },
+        {
+          id: 4,
+          nombre_completo: 'Laura Camila Ortiz',
+          tipo_documento: 'CC',
+          numero_documento: '1014567890',
+          telefono: '3209876543',
+          email: 'laura.ortiz@gmail.com',
+          ciudad: 'Barranquilla',
+          direccion: 'Calle 72 # 53-40',
+          banco_desembolso: 'Bancolombia',
+          tipo_cuenta: 'Ahorros',
+          numero_cuenta: '543-123456-99'
+        },
+        {
+          id: 5,
+          nombre_completo: 'Mateo Valencia',
+          tipo_documento: 'CC',
+          numero_documento: '1088776655',
+          telefono: '3187654321',
+          email: 'mateo.valencia@outlook.com',
+          ciudad: 'Bucaramanga',
+          direccion: 'Carrera 27 # 36-15',
+          banco_desembolso: 'Nequi',
+          tipo_cuenta: 'Billetera Digital',
+          numero_cuenta: '3187654321'
+        }
+      ],
+      prestamos: [
+        {
+          id: 1,
+          codigo: 'SOLV-1001',
+          cliente_id: 1,
+          nombre_completo: 'Carlos Andrés Restrepo',
+          tipo_documento: 'CC',
+          numero_documento: '1020304050',
+          telefono: '3104567890',
+          email: 'carlos.restrepo@gmail.com',
+          ciudad: 'Medellín',
+          banco_desembolso: 'Bancolombia',
+          tipo_cuenta: 'Ahorros',
+          numero_cuenta: '241-987654-12',
+          monto_solicitado: 1000000,
+          porcentaje_interes: 20,
+          valor_interes: 200000,
+          total_a_pagar: 1200000,
+          saldo_pendiente: 1200000,
+          total_abonado: 0,
+          plazo_cuotas: 2,
+          valor_cuota: 600000,
+          estado: 'APROBADO',
+          fecha_solicitud: dateSubDays(15),
+          fecha_aprobacion: dateSubDays(15),
+          fecha_vencimiento: dateAddDays(13),
+          pagos: []
+        },
+        {
+          id: 2,
+          codigo: 'SOLV-1002',
+          cliente_id: 2,
+          nombre_completo: 'Diana Marcela Gómez',
+          tipo_documento: 'CC',
+          numero_documento: '1035987654',
+          telefono: '3157891234',
+          email: 'diana.gomez@hotmail.com',
+          ciudad: 'Bogotá',
+          banco_desembolso: 'Nequi',
+          tipo_cuenta: 'Billetera Digital',
+          numero_cuenta: '3157891234',
+          monto_solicitado: 300000,
+          porcentaje_interes: 20,
+          valor_interes: 60000,
+          total_a_pagar: 360000,
+          saldo_pendiente: 360000,
+          total_abonado: 0,
+          plazo_cuotas: 1,
+          valor_cuota: 360000,
+          estado: 'EN_MORA',
+          fecha_solicitud: dateSubDays(40),
+          fecha_aprobacion: dateSubDays(40),
+          fecha_vencimiento: dateSubDays(12),
+          pagos: []
+        },
+        {
+          id: 3,
+          codigo: 'SOLV-1003',
+          cliente_id: 3,
+          nombre_completo: 'Felipe Santamaría',
+          tipo_documento: 'CC',
+          numero_documento: '1098765432',
+          telefono: '3001234567',
+          email: 'felipe.santa@yahoo.com',
+          ciudad: 'Cali',
+          banco_desembolso: 'Daviplata',
+          tipo_cuenta: 'Billetera Digital',
+          numero_cuenta: '3001234567',
+          monto_solicitado: 500000,
+          porcentaje_interes: 20,
+          valor_interes: 100000,
+          total_a_pagar: 600000,
+          saldo_pendiente: 0,
+          total_abonado: 600000,
+          plazo_cuotas: 1,
+          valor_cuota: 600000,
+          estado: 'PAGADO',
+          fecha_solicitud: dateSubDays(60),
+          fecha_aprobacion: dateSubDays(60),
+          fecha_vencimiento: dateSubDays(32),
+          pagos: [
+            {
+              id: 1,
+              prestamo_id: 3,
+              monto_pagado: 600000,
+              metodo_pago: 'PSE',
+              referencia_transaccion: 'PSE-789456123',
+              fecha_pago: dateSubDays(31)
+            }
+          ]
+        },
+        {
+          id: 4,
+          codigo: 'SOLV-1004',
+          cliente_id: 4,
+          nombre_completo: 'Laura Camila Ortiz',
+          tipo_documento: 'CC',
+          numero_documento: '1014567890',
+          telefono: '3209876543',
+          email: 'laura.ortiz@gmail.com',
+          ciudad: 'Barranquilla',
+          banco_desembolso: 'Bancolombia',
+          tipo_cuenta: 'Ahorros',
+          numero_cuenta: '543-123456-99',
+          monto_solicitado: 2000000,
+          porcentaje_interes: 20,
+          valor_interes: 400000,
+          total_a_pagar: 2400000,
+          saldo_pendiente: 1200000,
+          total_abonado: 1200000,
+          plazo_cuotas: 2,
+          valor_cuota: 1200000,
+          estado: 'APROBADO',
+          fecha_solicitud: dateSubDays(25),
+          fecha_aprobacion: dateSubDays(25),
+          fecha_vencimiento: dateAddDays(3),
+          pagos: [
+            {
+              id: 2,
+              prestamo_id: 4,
+              monto_pagado: 1200000,
+              metodo_pago: 'NEQUI',
+              referencia_transaccion: 'NEQ-554433221',
+              fecha_pago: dateSubDays(5)
+            }
+          ]
+        },
+        {
+          id: 5,
+          codigo: 'SOLV-1005',
+          cliente_id: 5,
+          nombre_completo: 'Mateo Valencia',
+          tipo_documento: 'CC',
+          numero_documento: '1088776655',
+          telefono: '3187654321',
+          email: 'mateo.valencia@outlook.com',
+          ciudad: 'Bucaramanga',
+          banco_desembolso: 'Nequi',
+          tipo_cuenta: 'Billetera Digital',
+          numero_cuenta: '3187654321',
+          monto_solicitado: 50000,
+          porcentaje_interes: 20,
+          valor_interes: 10000,
+          total_a_pagar: 60000,
+          saldo_pendiente: 60000,
+          total_abonado: 0,
+          plazo_cuotas: 1,
+          valor_cuota: 60000,
+          estado: 'PENDIENTE',
+          fecha_solicitud: dateSubDays(1),
+          fecha_aprobacion: null,
+          fecha_vencimiento: dateAddDays(27),
+          pagos: []
+        }
+      ]
+    };
+
+    this.saveRawData(initialData);
+  },
+
+  recalcularInteresesVencidos() {
+    const data = this.getRawData();
+    if (!data || !data.prestamos) return;
+    const hoy = new Date();
+
+    data.prestamos.forEach(pr => {
+      if (pr.saldo_pendiente > 0 && (pr.estado === 'APROBADO' || pr.estado === 'EN_MORA')) {
+        const fechaSol = new Date(pr.fecha_solicitud);
+        const dias = Math.floor((hoy - fechaSol) / (1000 * 60 * 60 * 24));
+        const periodos = Math.max(1, Math.floor(dias / 28));
+
+        const nuevoInteres = Math.round(pr.monto_solicitado * 0.20 * periodos);
+        const nuevoTotal = pr.monto_solicitado + nuevoInteres;
+        const nuevoSaldo = Math.max(0, nuevoTotal - (pr.total_abonado || 0));
+
+        pr.valor_interes = nuevoInteres;
+        pr.total_a_pagar = nuevoTotal;
+        pr.saldo_pendiente = nuevoSaldo;
+        if (periodos > 1) {
+          pr.estado = 'EN_MORA';
+        }
+      }
+    });
+
+    this.saveRawData(data);
+  },
+
+  getMetrics() {
+    this.recalcularInteresesVencidos();
+    const data = this.getRawData() || { prestamos: [] };
+    const p = data.prestamos;
+
+    const total_solicitudes = p.length;
+    const total_prestado = p.reduce((acc, x) => acc + (x.monto_solicitado || 0), 0);
+    const total_intereses_generados = p.reduce((acc, x) => acc + (x.valor_interes || 0), 0);
+    const total_cartera = p.reduce((acc, x) => acc + (x.total_a_pagar || 0), 0);
+    const total_por_cobrar = p.reduce((acc, x) => acc + (x.saldo_pendiente || 0), 0);
+    const total_recaudado = p.reduce((acc, x) => acc + (x.total_abonado || 0), 0);
+    const deudores_activos = p.filter(x => x.saldo_pendiente > 0 && ['APROBADO', 'EN_MORA', 'PENDIENTE'].includes(x.estado)).length;
+    const clientes_paz_y_salvo = p.filter(x => x.saldo_pendiente === 0 && x.estado === 'PAGADO').length;
+    const en_mora_cantidad = p.filter(x => x.estado === 'EN_MORA').length;
+    const en_mora_monto = p.filter(x => x.estado === 'EN_MORA').reduce((acc, x) => acc + (x.saldo_pendiente || 0), 0);
+    const pendientes_aprobacion = p.filter(x => x.estado === 'PENDIENTE').length;
+
+    return {
+      total_solicitudes,
+      total_prestado,
+      total_intereses_generados,
+      total_cartera,
+      total_por_cobrar,
+      total_recaudado,
+      deudores_activos,
+      clientes_paz_y_salvo,
+      en_mora_cantidad,
+      en_mora_monto,
+      pendientes_aprobacion
+    };
+  },
+
+  getAllLoans(filter = 'todos', search = '') {
+    this.recalcularInteresesVencidos();
+    const data = this.getRawData() || { prestamos: [] };
+    let list = [...data.prestamos];
+
+    if (filter === 'deben') {
+      list = list.filter(p => p.saldo_pendiente > 0 && ['APROBADO', 'EN_MORA', 'PENDIENTE'].includes(p.estado));
+    } else if (filter === 'pagados') {
+      list = list.filter(p => p.saldo_pendiente === 0 && p.estado === 'PAGADO');
+    } else if (filter === 'mora') {
+      list = list.filter(p => p.estado === 'EN_MORA');
+    } else if (filter === 'pendientes') {
+      list = list.filter(p => p.estado === 'PENDIENTE');
+    }
+
+    if (search && search.trim()) {
+      const s = search.trim().toLowerCase();
+      list = list.filter(p =>
+        (p.nombre_completo && p.nombre_completo.toLowerCase().includes(s)) ||
+        (p.numero_documento && p.numero_documento.includes(s)) ||
+        (p.codigo && p.codigo.toLowerCase().includes(s)) ||
+        (p.telefono && p.telefono.includes(s))
+      );
+    }
+
+    list.sort((a, b) => {
+      if (a.estado === 'EN_MORA' && b.estado !== 'EN_MORA') return -1;
+      if (b.estado === 'EN_MORA' && a.estado !== 'EN_MORA') return 1;
+      if (a.saldo_pendiente > 0 && b.saldo_pendiente === 0) return -1;
+      if (b.saldo_pendiente > 0 && a.saldo_pendiente === 0) return 1;
+      return b.id - a.id;
+    });
+
+    return list;
+  },
+
+  getClientByDocument(doc) {
+    this.recalcularInteresesVencidos();
+    const data = this.getRawData() || { clientes: [], prestamos: [] };
+    const cliente = data.clientes.find(c => c.numero_documento === doc) ||
+      data.prestamos.find(p => p.numero_documento === doc);
+
+    if (!cliente) return null;
+
+    const prestamos = data.prestamos.filter(p => p.numero_documento === doc);
+    return {
+      cliente: {
+        nombre_completo: cliente.nombre_completo,
+        numero_documento: cliente.numero_documento,
+        telefono: cliente.telefono,
+        ciudad: cliente.ciudad,
+        banco_desembolso: cliente.banco_desembolso,
+        tipo_cuenta: cliente.tipo_cuenta
+      },
+      prestamos
+    };
+  },
+
+  createLoan(payload) {
+    const data = this.getRawData() || { clientes: [], prestamos: [] };
+    const monto = parseFloat(payload.monto_solicitado);
+    const cuotas = parseInt(payload.plazo_cuotas, 10) || 1;
+    const interes = Math.round(monto * 0.20);
+    const total = monto + interes;
+
+    const now = new Date();
+    const hoy = now.toISOString().split('T')[0];
+    const venc = new Date(now);
+    venc.setDate(venc.getDate() + (28 * cuotas));
+    const fechaVenc = venc.toISOString().split('T')[0];
+
+    const randNum = Math.floor(1000 + Math.random() * 9000);
+    const nuevoId = (data.prestamos.length > 0 ? Math.max(...data.prestamos.map(p => p.id)) : 0) + 1;
+
+    const nuevoPrestamo = {
+      id: nuevoId,
+      codigo: `SOLV-${randNum}`,
+      nombre_completo: payload.nombre_completo,
+      tipo_documento: payload.tipo_documento || 'CC',
+      numero_documento: payload.numero_documento,
+      telefono: payload.telefono,
+      email: payload.email,
+      ciudad: payload.ciudad,
+      direccion: payload.direccion || '',
+      banco_desembolso: payload.banco_desembolso || 'Bancolombia',
+      tipo_cuenta: payload.tipo_cuenta || 'Ahorros',
+      numero_cuenta: payload.numero_cuenta || '',
+      monto_solicitado: monto,
+      porcentaje_interes: 20,
+      valor_interes: interes,
+      total_a_pagar: total,
+      saldo_pendiente: total,
+      total_abonado: 0,
+      plazo_cuotas: cuotas,
+      valor_cuota: Math.round(total / cuotas),
+      estado: 'APROBADO',
+      fecha_solicitud: hoy,
+      fecha_aprobacion: hoy,
+      fecha_vencimiento: fechaVenc,
+      pagos: []
+    };
+
+    data.prestamos.unshift(nuevoPrestamo);
+
+    // Save client if not existing
+    if (!data.clientes.find(c => c.numero_documento === payload.numero_documento)) {
+      data.clientes.push({
+        id: data.clientes.length + 1,
+        nombre_completo: payload.nombre_completo,
+        numero_documento: payload.numero_documento,
+        telefono: payload.telefono,
+        email: payload.email,
+        ciudad: payload.ciudad,
+        banco_desembolso: payload.banco_desembolso,
+        tipo_cuenta: payload.tipo_cuenta,
+        numero_cuenta: payload.numero_cuenta
+      });
+    }
+
+    this.saveRawData(data);
+    return nuevoPrestamo;
+  },
+
+  registerPayment(prestamo_id, monto, metodo_pago, referencia) {
+    const data = this.getRawData();
+    const pr = data.prestamos.find(p => p.id === parseInt(prestamo_id, 10));
+    if (!pr) throw new Error('Préstamo no encontrado');
+
+    const montoNum = parseFloat(monto);
+    const nuevoSaldo = Math.max(0, pr.saldo_pendiente - montoNum);
+    pr.saldo_pendiente = nuevoSaldo;
+    pr.total_abonado = (pr.total_abonado || 0) + montoNum;
+
+    if (nuevoSaldo === 0) {
+      pr.estado = 'PAGADO';
+    }
+
+    const ref = referencia || `PAY-${Date.now().toString().slice(-6)}`;
+    const nuevoPago = {
+      id: Date.now(),
+      prestamo_id: pr.id,
+      monto_pagado: montoNum,
+      metodo_pago: metodo_pago,
+      referencia_transaccion: ref,
+      fecha_pago: new Date().toISOString().split('T')[0]
+    };
+
+    if (!pr.pagos) pr.pagos = [];
+    pr.pagos.unshift(nuevoPago);
+
+    this.saveRawData(data);
+
+    return {
+      prestamo_actualizado: pr,
+      pago: {
+        referencia: ref,
+        monto: montoNum,
+        metodo_pago,
+        fecha_pago: nuevoPago.fecha_pago,
+        saldo_restante: nuevoSaldo,
+        estado_final: pr.estado
+      }
+    };
+  },
+
+  updateLoanStatus(id, nuevoEstado) {
+    const data = this.getRawData();
+    const pr = data.prestamos.find(p => p.id === parseInt(id, 10));
+    if (pr) {
+      pr.estado = nuevoEstado;
+      this.saveRawData(data);
+    }
+    return pr;
+  }
+};
+
+// ---------------------------------------------------------
 // INITIALIZATION
 // ---------------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (window.lucide) {
     lucide.createIcons();
   }
+
+  // Detect if running on static host (GitHub Pages or file://)
+  if (window.location.protocol === 'file:' || window.location.hostname.includes('github.io')) {
+    useLocalDB = true;
+    LocalDB.init();
+  } else {
+    try {
+      const probe = await fetch(`${API_BASE}/api/metricas`, { cache: 'no-store' });
+      if (!probe.ok) {
+        useLocalDB = true;
+        LocalDB.init();
+      }
+    } catch (e) {
+      useLocalDB = true;
+      LocalDB.init();
+    }
+  }
+
   actualizarSimulador();
   cargarMetricasYPrestamos();
 });
@@ -79,7 +605,7 @@ function toggleMobileMenu() {
 }
 
 // ---------------------------------------------------------
-// SIMULATOR LOGIC (20% FIJO - $50.000 a $3.000.000 COP)
+// SIMULATOR LOGIC (20% CADA 4 SEMANAS - $50.000 a $3.000.000 COP)
 // ---------------------------------------------------------
 function actualizarSimulador() {
   const slider = document.getElementById('slider-monto');
@@ -101,9 +627,9 @@ function actualizarSimulador() {
   resumenTotal.textContent = `${formatCOP(total)} COP`;
 
   if (currentCuotas === 1) {
-    resumenCuotaDetalle.textContent = `1 pago único a 30 días de ${formatCOP(total)}`;
+    resumenCuotaDetalle.textContent = `1 pago único a 4 semanas (28 días) de ${formatCOP(total)}`;
   } else {
-    resumenCuotaDetalle.textContent = `${currentCuotas} cuotas mensuales de ${formatCOP(valorCuota)}`;
+    resumenCuotaDetalle.textContent = `${currentCuotas} cuotas de ${formatCOP(valorCuota)} (cada 4 semanas)`;
   }
 }
 
@@ -116,7 +642,7 @@ function setMonto(valor) {
 function setCuotas(cuotas) {
   currentCuotas = cuotas;
   const displayCuotas = document.getElementById('display-cuotas');
-  displayCuotas.textContent = `${cuotas} ${cuotas === 1 ? 'Cuota (30 días)' : `Cuotas (${cuotas * 30} días)`}`;
+  displayCuotas.textContent = `${cuotas} ${cuotas === 1 ? 'Cuota (4 semanas)' : `Cuotas (${cuotas * 4} semanas)`}`;
 
   document.querySelectorAll('.cuota-btn').forEach(btn => {
     btn.className = 'cuota-btn py-2 text-xs font-bold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50';
@@ -173,34 +699,35 @@ async function enviarSolicitudPrestamo(e) {
   btn.innerHTML = `<span class="inline-block animate-spin mr-2">⏳</span> Procesando...`;
 
   try {
-    const res = await fetch(`${API_BASE}/api/solicitar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Error al procesar la solicitud');
+    let prestamo;
+    if (useLocalDB) {
+      prestamo = LocalDB.createLoan(payload);
+    } else {
+      const res = await fetch(`${API_BASE}/api/solicitar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al procesar la solicitud');
+      prestamo = data.prestamo;
     }
 
     cerrarModalSolicitud();
     form.reset();
 
-    // Congratulation alert
     Swal.fire({
       icon: 'success',
       title: '¡Préstamo Aprobado y Registrado!',
       html: `
         <div class="text-left text-sm space-y-2 mt-3">
-          <p>Felicidades <strong>${data.prestamo.nombre_completo}</strong>, tu solicitud ha sido aprobada con éxito.</p>
+          <p>Felicidades <strong>${prestamo.nombre_completo}</strong>, tu solicitud ha sido aprobada con éxito.</p>
           <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-            <p><strong>Código de Crédito:</strong> <span class="font-mono text-emerald-800 font-bold">${data.prestamo.codigo}</span></p>
-            <p><strong>Monto Solicitado:</strong> ${formatCOP(data.prestamo.monto_solicitado)}</p>
-            <p><strong>Interés Fijo (20%):</strong> ${formatCOP(data.prestamo.valor_interes)}</p>
-            <p><strong>Total a Pagar:</strong> <span class="text-navy-950 font-black">${formatCOP(data.prestamo.total_a_pagar)}</span></p>
-            <p><strong>Desembolso programado a:</strong> ${data.prestamo.banco_desembolso} (${data.prestamo.tipo_cuenta})</p>
+            <p><strong>Código de Crédito:</strong> <span class="font-mono text-emerald-800 font-bold">${prestamo.codigo}</span></p>
+            <p><strong>Monto Solicitado:</strong> ${formatCOP(prestamo.monto_solicitado)}</p>
+            <p><strong>Interés (20% cada 4 semanas):</strong> ${formatCOP(prestamo.valor_interes)}</p>
+            <p><strong>Total a Pagar:</strong> <span class="text-navy-950 font-black">${formatCOP(prestamo.total_a_pagar)}</span></p>
+            <p><strong>Desembolso programado a:</strong> ${prestamo.banco_desembolso} (${prestamo.tipo_cuenta})</p>
           </div>
           <p class="text-xs text-slate-500">La información ya fue guardada en la base de datos de deudores y cartera.</p>
         </div>
@@ -261,29 +788,29 @@ async function consultarCreditoPorCedula(cedula) {
   `;
 
   try {
-    const res = await fetch(`${API_BASE}/api/clientes/consulta?documento=${encodeURIComponent(cedula)}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      container.innerHTML = `
-        <div class="bg-white p-8 rounded-3xl border border-slate-200 text-center space-y-3">
-          <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">!</div>
-          <h3 class="text-xl font-bold text-slate-800">No se encontraron créditos activos</h3>
-          <p class="text-sm text-slate-600 max-w-md mx-auto">${data.error || 'No tienes créditos registrados con este número de cédula.'}</p>
-          <button onclick="setMonto(500000); abrirModalSolicitud();" class="mt-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-bold shadow">
-            ¡Solicita tu primer crédito ahora!
-          </button>
-        </div>
-      `;
-      return;
+    let data;
+    if (useLocalDB) {
+      data = LocalDB.getClientByDocument(cedula.trim());
+      if (!data) {
+        throw new Error('No se encontraron préstamos asociados a esta cédula.');
+      }
+    } else {
+      const res = await fetch(`${API_BASE}/api/clientes/consulta?documento=${encodeURIComponent(cedula)}`);
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se encontraron créditos registrados');
     }
 
     renderConsultaCliente(data.cliente, data.prestamos);
 
   } catch (err) {
     container.innerHTML = `
-      <div class="bg-red-50 border border-red-200 p-6 rounded-2xl text-red-700 text-sm text-center">
-        Error al conectar con la base de datos: ${err.message}
+      <div class="bg-white p-8 rounded-3xl border border-slate-200 text-center space-y-3">
+        <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">!</div>
+        <h3 class="text-xl font-bold text-slate-800">No se encontraron créditos activos</h3>
+        <p class="text-sm text-slate-600 max-w-md mx-auto">${err.message}</p>
+        <button onclick="setMonto(500000); abrirModalSolicitud();" class="mt-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-sm font-bold shadow">
+          ¡Solicita tu primer crédito ahora!
+        </button>
       </div>
     `;
   }
@@ -356,7 +883,7 @@ function renderConsultaCliente(cliente, prestamos) {
             <span class="text-sm font-bold text-slate-900">${formatCOP(pr.monto_solicitado)}</span>
           </div>
           <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200">
-            <span class="text-[11px] text-slate-600 font-semibold block">Interés Fijo (20%)</span>
+            <span class="text-[11px] text-slate-600 font-semibold block">Interés (20% × 4 sem)</span>
             <span class="text-sm font-bold text-emerald-600">+${formatCOP(pr.valor_interes)}</span>
           </div>
           <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200">
@@ -384,7 +911,7 @@ function renderConsultaCliente(cliente, prestamos) {
           </div>
           <div class="flex justify-between text-[11px] text-slate-600">
             <span>Vence el: <strong class="text-slate-800 font-mono">${formatDate(pr.fecha_vencimiento)}</strong></span>
-            <span>${pr.plazo_cuotas} cuota(s) pactada(s)</span>
+            <span>${pr.plazo_cuotas} cuota(s) (cada 4 semanas)</span>
           </div>
         </div>
 
@@ -409,7 +936,7 @@ function renderConsultaCliente(cliente, prestamos) {
           `}
 
           <span class="text-xs text-slate-600 font-medium">
-            Desembolsado en: ${cliente.banco_desembolso} (${cliente.tipo_cuenta})
+            Desembolsado en: ${cliente.banco_desembolso || 'Banco'} (${cliente.tipo_cuenta || 'Ahorros'})
           </span>
         </div>
 
@@ -456,7 +983,6 @@ function abrirModalPagoParaCredito(prestamo, cliente) {
   document.getElementById('pago-cliente-nombre').textContent = cliente ? cliente.nombre_completo : (prestamo.nombre_completo || 'Cliente');
   document.getElementById('pago-saldo-pendiente').textContent = `${formatCOP(prestamo.saldo_pendiente)} COP`;
 
-  // Default payment amount = remaining balance
   const montoInput = document.getElementById('pago-monto');
   montoInput.value = prestamo.saldo_pendiente;
   montoInput.max = prestamo.saldo_pendiente;
@@ -580,27 +1106,34 @@ async function procesarPago(e) {
   btn.innerHTML = `<span class="inline-block animate-spin mr-2">⏳</span> Conectando con pasarela ${metodo}...`;
 
   try {
-    const res = await fetch(`${API_BASE}/api/pagar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prestamo_id: prestamoId,
-        monto: monto,
-        metodo_pago: metodo,
-        referencia: `${metodo}-${Date.now().toString().slice(-6)}`
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al procesar pago');
+    let data;
+    if (useLocalDB) {
+      data = LocalDB.registerPayment(
+        prestamoId,
+        monto,
+        metodo,
+        `${metodo}-${Date.now().toString().slice(-6)}`
+      );
+    } else {
+      const res = await fetch(`${API_BASE}/api/pagar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prestamo_id: prestamoId,
+          monto: monto,
+          metodo_pago: metodo,
+          referencia: `${metodo}-${Date.now().toString().slice(-6)}`
+        })
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al procesar pago');
+    }
 
     cerrarModalPago();
 
-    // Check if debt reached 0 (PAZ Y SALVO)
     const saldoFinal = data.pago.saldo_restante;
 
     if (saldoFinal === 0) {
-      // Trigger celebratory confetti
       if (typeof confetti === 'function') {
         confetti({
           particleCount: 150,
@@ -654,7 +1187,6 @@ async function procesarPago(e) {
       cargarMetricasYPrestamos();
     }
 
-    // Refresh lookup view if active
     const inputCed = document.getElementById('input-consulta-cedula');
     if (inputCed && inputCed.value) {
       consultarCreditoPorCedula(inputCed.value);
@@ -688,7 +1220,7 @@ function verCertificadoPazYSalvo(prestamo, cliente) {
   document.getElementById('recibo-cedula').textContent = cedula;
   document.getElementById('recibo-codigo').textContent = prestamo.codigo;
   document.getElementById('recibo-monto-prestado').textContent = formatCOP(prestamo.monto_solicitado);
-  document.getElementById('recibo-total-pactado').textContent = `${formatCOP(prestamo.total_a_pagar)} (Incluye 20% de interés)`;
+  document.getElementById('recibo-total-pactado').textContent = `${formatCOP(prestamo.total_a_pagar)} (Incluye 20% cada 4 semanas)`;
   document.getElementById('recibo-id-ref').textContent = `CERT-${prestamo.codigo}-${Date.now().toString().slice(-4)}`;
   document.getElementById('recibo-fecha').textContent = `Fecha de emisión: ${new Date().toLocaleDateString('es-CO')}`;
 
@@ -702,7 +1234,7 @@ function verCertificadoPazYSalvo(prestamo, cliente) {
     titulo.textContent = 'Certificado de Paz y Salvo';
     watermark.classList.remove('hidden');
     estadoBox.className = 'p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-medium';
-    estadoBox.innerHTML = `Se hace constar que dicho crédito se encuentra a la fecha <strong>TOTALMENTE CANCELADO Y A PAZ Y SALVO</strong> por todo concepto de capital e intereses del 20%.`;
+    estadoBox.innerHTML = `Se hace constar que dicho crédito se encuentra a la fecha <strong>TOTALMENTE CANCELADO Y A PAZ Y SALVO</strong> por todo concepto de capital e intereses.`;
   } else {
     titulo.className = 'px-3 py-1 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800';
     titulo.textContent = 'Estado de Cuenta Parcial';
@@ -724,9 +1256,13 @@ function cerrarModalRecibo() {
 // ---------------------------------------------------------
 async function cargarMetricasYPrestamos() {
   try {
-    // 1. Fetch Metrics
-    const resM = await fetch(`${API_BASE}/api/metricas`);
-    const metrics = await resM.json();
+    let metrics;
+    if (useLocalDB) {
+      metrics = LocalDB.getMetrics();
+    } else {
+      const resM = await fetch(`${API_BASE}/api/metricas`);
+      metrics = await resM.json();
+    }
 
     document.getElementById('kpi-total-prestado').textContent = formatCOP(metrics.total_prestado);
     document.getElementById('kpi-intereses').textContent = formatCOP(metrics.total_intereses_generados);
@@ -742,20 +1278,17 @@ async function cargarMetricasYPrestamos() {
 
     document.getElementById('kpi-mora-cantidad').textContent = `${metrics.en_mora_cantidad} préstamos vencidos`;
 
-    // Navbar Badge
     const navBadge = document.getElementById('badge-deudores-nav');
     if (navBadge) {
       navBadge.textContent = `${metrics.deudores_activos} Deben | ${metrics.clientes_paz_y_salvo} Paz`;
     }
 
-    // Filter counts
     document.getElementById('count-todos').textContent = metrics.total_solicitudes;
     document.getElementById('count-deben').textContent = metrics.deudores_activos;
     document.getElementById('count-pagados').textContent = metrics.clientes_paz_y_salvo;
     document.getElementById('count-mora').textContent = metrics.en_mora_cantidad;
     document.getElementById('count-pendientes').textContent = metrics.pendientes_aprobacion;
 
-    // 2. Fetch Loans list with current filter & search
     await refrescarTablaPrestamos();
 
   } catch (err) {
@@ -765,9 +1298,14 @@ async function cargarMetricasYPrestamos() {
 
 async function refrescarTablaPrestamos() {
   try {
-    const url = `${API_BASE}/api/prestamos?filtro=${encodeURIComponent(currentFiltroAdmin)}&search=${encodeURIComponent(currentSearchAdmin)}`;
-    const res = await fetch(url);
-    const prestamos = await res.json();
+    let prestamos;
+    if (useLocalDB) {
+      prestamos = LocalDB.getAllLoans(currentFiltroAdmin, currentSearchAdmin);
+    } else {
+      const url = `${API_BASE}/api/prestamos?filtro=${encodeURIComponent(currentFiltroAdmin)}&search=${encodeURIComponent(currentSearchAdmin)}`;
+      const res = await fetch(url);
+      prestamos = await res.json();
+    }
     currentPrestamosList = prestamos;
     renderTablaAdmin(prestamos);
   } catch (err) {
@@ -846,11 +1384,9 @@ function renderTablaAdmin(prestamos) {
       rowBg = 'hover:bg-amber-50/30';
     }
 
-    // Phone cleanup for WhatsApp
     const telRaw = (pr.telefono || '').replace(/\D/g, '');
     const telColombia = telRaw.length === 10 ? `57${telRaw}` : telRaw;
 
-    // WhatsApp collection message
     const mensajeCobro = encodeURIComponent(
       `Hola ${pr.nombre_completo}, te saludamos de parte de Wilmar Pineda (Préstamos). Te informamos que tienes un saldo pendiente de ${formatCOP(pr.saldo_pendiente)} correspondiente a tu crédito ${pr.codigo} (Vencimiento: ${formatDate(pr.fecha_vencimiento)}). Puedes realizar tu pago fácilmente por PSE o Nequi en nuestra plataforma. ¡Agradecemos tu puntualidad!`
     );
@@ -889,7 +1425,7 @@ function renderTablaAdmin(prestamos) {
 
         <!-- Abonado -->
         <td class="py-3 px-4 text-right text-emerald-700 font-bold">
-          ${formatCOP(pr.total_abonado)}
+          ${formatCOP(pr.total_abonado || 0)}
         </td>
 
         <!-- Saldo Deuda -->
@@ -972,13 +1508,16 @@ function renderTablaAdmin(prestamos) {
 
 async function cambiarEstadoPrestamo(id, nuevoEstado) {
   try {
-    const res = await fetch(`${API_BASE}/api/prestamos/${id}/estado`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado: nuevoEstado })
-    });
-
-    if (!res.ok) throw new Error('No se pudo actualizar el estado');
+    if (useLocalDB) {
+      LocalDB.updateLoanStatus(id, nuevoEstado);
+    } else {
+      const res = await fetch(`${API_BASE}/api/prestamos/${id}/estado`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      if (!res.ok) throw new Error('No se pudo actualizar el estado');
+    }
 
     Swal.fire({
       icon: 'success',
@@ -1026,7 +1565,7 @@ function exportarCSV() {
     pr.porcentaje_interes,
     pr.valor_interes,
     pr.total_a_pagar,
-    pr.total_abonado,
+    pr.total_abonado || 0,
     pr.saldo_pendiente,
     `"${pr.estado}"`,
     `"${pr.fecha_vencimiento}"`
